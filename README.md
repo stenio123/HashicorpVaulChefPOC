@@ -1,6 +1,8 @@
 # Hashicorp Vault + Chef Server POC
 This is a demo showing how to integrate Hashicorp Vault with Chef Server to manage secrets.
 
+Once ChefServer and Hashi Vault are running, spin up the Chef Nodes and inform certain parameters manually (TODO automation after manual works).
+
 To run:
 
 1. Ensure you have [VirtualBox](https://www.virtualbox.org/wiki/Downloads) installed
@@ -62,6 +64,7 @@ Execute:
 
 ## FAQ
 1. How to associate a policy with a user?
+
 Policies described here https://www.vaultproject.io/docs/concepts/policies.html.
 The way to associate a certain policy with a user will vary on the Authentication backend. For tokens, it is associated during token creation time through a parameter.
 For example, once policy "production" has been created, this command will generate a token associated with that policy and with TTL of 720 hours:
@@ -70,11 +73,14 @@ For example, once policy "production" has been created, this command will genera
     ````
 
 2. How to automate Vault initialization?
+
 Unclear as to where to store those tokens and run initial sequence of commands.
 
 3. How do Chef Nodes authenticate agains Vault?
+
 Documentation points to the user of AppRole Auth backend. It suggests the use of 'hard to guess' UIID, such as MAC address.
 Chef might be able to do that during bootstrap by accessing OHAI attributes. But then unclear how Chef authenticates with Vault to create AppRole users for Nodes.
 
 4. How to initialize secrets on Vault, how to add new secret?
-el for Markdown's syntax, type some text into the left window and watch the results in the right.
+
+5. How do you manage the secrets? Shouldn't there be a list of the available secrets, not necessarily the sensitive information, but at least the keys they are associated with.
