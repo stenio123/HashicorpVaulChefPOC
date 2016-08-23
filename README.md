@@ -3,6 +3,7 @@
 This is a demo showing how to integrate Hashicorp Vault with Chef Server to manage secrets.
 
 To run:
+
 1. Ensure you have VirtualBox installed
 2. Go to each folder and execute "_vagrant up_"
 3. Chef Server should take about 15 minutes to complete installation
