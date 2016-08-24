@@ -1,0 +1,1 @@
+{"rsync":{"/home/vagrant/sync":{"type":"rsync","guestpath":"/home/vagrant/sync","hostpath":"/Users/stenio.ferreira/projects/VaultChefDemo/ChefNodes","disabled":false,"__vagrantfile":true,"owner":"vagrant","group":"vagrant"}}}

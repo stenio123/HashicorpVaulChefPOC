@@ -1,23 +1,44 @@
 # Hashicorp Vault + Chef Server POC
-This is a demo showing how to integrate Hashicorp Vault with Chef Server to manage secrets.
 
-Once ChefServer and Hashi Vault are running, spin up the Chef Nodes and inform certain parameters manually (TODO automation after manual works).
+### This is a demo showing how to integrate Hashicorp Vault with Chef Server to manage secrets.
 
-To run:
+### This project uses insecure configuration, it is intended for educational purpouses only.
 
-1. Ensure you have [VirtualBox](https://www.virtualbox.org/wiki/Downloads) installed
-2. Execute
-    ````
-    vagrant up
-    ````
-3. Chef Server should take about 15 minutes to complete installation
+### Requirements
+- Tested with Vagrant 1.8.1
+- [VirtualBox](https://www.virtualbox.org/wiki/Downloads) installed
+- Enough RAM if running all VMs
 
+If you already have Chef Server with Nodes running, move to the _Hashicorp Vault_ section below.
 
 ## Chef Server
-1. Once done, open a browser and go to _https://192.168.0.42_
-2. Login with _admin_ and _password_
+### Note: Hardcoded Variables
+If you change these values on the Vagrantfile, ensure that they are changed across the project since there are dependencies. TODO - convert into variables.
+
+ip: 192.168.0.42
+hostname: chef.centos.box
+organization name: org
+username: admin
+password: password
+
+### Installation
+1. Go to the Chef folder and start the VMs
+    ````
+    cd Chef
+    vagrant up
+    ````
+2. Chef Server should take about 15 minutes to complete installation
+3. Once done, open a browser and go to _https://192.168.0.43_
+4. Login with _admin_ and _password_
+5. The Chef workstation will ensure the Node is added to Chef Server.
 
 ## Hashicorp Vault
+### Installation
+1. Go to the HashicorpVault folder and start the VMs
+    ````
+    cd HashicorpVault
+    vagrant up
+    ````
 ### Manual steps to initialize the Vault (only needed once)
 #### Unseal
 1. Execute to log into the VM
