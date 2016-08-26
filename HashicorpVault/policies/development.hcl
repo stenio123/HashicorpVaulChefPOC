@@ -1,3 +1,3 @@
-path "secrets/development" {
+path "secret/development/*" {
   policy = "read"
 }

@@ -25,9 +25,11 @@ If you already have Chef Server with Nodes running, move to the _Hashicorp Vault
 5. The Chef workstation will ensure the Node is added to Chef Server.
 
 ### Note: Hardcoded Variables
-If you change these values on the Vagrantfile, ensure that they are changed across the project since there are dependencies. TODO - convert into variables.
+If you change these values on the Vagrantfile, ensure that they are changed across the project since there are dependencies.
 
-- ip: 192.168.0.42
+TODO - convert into variables, since Vagrantfile is Ruby https://maci0.wordpress.com/2013/11/09/dynamic-multi-machine-vagrantfile/.
+
+- ip: 192.168.0.43
 - hostname: chef.centos.box
 - organization name: org
 - username: admin
@@ -52,6 +54,7 @@ If you change these values on the Vagrantfile, ensure that they are changed acro
 2. Execute
 
     ````
+    ./vault server -config=sync/config.hcl
     vault init
     ````
 3. Write down the generated tokens, which will be needed to seal/unseal the vault in the future
@@ -66,12 +69,21 @@ If you change these values on the Vagrantfile, ensure that they are changed acro
     ````
     vault auth [root token]
     ````
-2. Execute to enable AppRole authentication:
+2. Enable auditing log
+
+    ```
+    ./vault audit-enable file path=./vault_audit.log
+    ```
+3. Execute to enable AppRole authentication:
 
     ```
     ./vault auth-enable approle
     ```
+4. Check existing secret 'folders':
 
+    ```
+    ./vault mounts
+    ```
 #### Add policies
 Execute:
 
@@ -80,19 +92,70 @@ Execute:
 ./vault policy-write qa sync/policies/qa.hcl
 ./vault policy-write development sync/policies/development.hcl
 ```
-#### Create a token that is associated with a policy
+
+#### Write sample secrets
 Execute:
 
 ```
-./vault token-create -policy="production"
+./vault write secret/production/password value=MyProdPassword
+./vault write secret/production/qa value=MyQAPassword
+./vault write secret/production/development value=MyDevelopmentPassword
 ```
 
-#### Write a secret
-Execute:
+#### Bootstrapping to allow a Node/ app using tokens
+1. Create token, and wrap results using Cubbyhole
 
-```
-./vault write secret/production/password value=MyPassword
-```
+   ```
+   ./vault token-create -policy=production -wrap-ttl=20m
+   ```
+
+   *Optional arguments*
+   _explicit_max_ttl_ - Sets the time after which this token can never be renewed.
+   _num_uses_ - Number of times this token can be used. Default is unlimited.
+   _renewable_ - If token is renewable or not. Default is true.
+   _ttl_ - Time token is valid. Default is 720hs.
+
+2. This returns a cubbyhole token with time to live. This is a single use token.
+3. Send token to Node
+4. Node issues
+
+    ```
+    curl \
+        -H "X-Vault-Token: [cubbyhole token]" \
+        -X GET \
+        http://192.168.0.46:8200/v1/cubbyhole/response
+    ```
+    This will return a json containing the access token and lease renewal token.
+    If returns permission denied, token either expired or compromised. Notify Vault to revoke that token and create a new one.
+5. Now whenever Node wants to talk to Vault, it should use its token on the X-Vault-Token header
+6. This token has ttl and will expire in 720hs. In order to keep alive, Node must issue
+    ```
+    curl \
+        -H "X-Vault-Token: [token]" \
+        -X POST \
+        http://192.168.0.46:8200/v1/auth/token/renew-self
+    ```
+    Not that this is not the cubbyhole token, it is the token that was wrapped in that token.
+    Lease renewal is only possible if token still valid. If expired or revoked, notify Higher Level Authority (Jenkins) and go back to step 1.
+
+#### Bootstrapping to allow a Node/ app using AppRole
+Hashicorp Vault also provides AppRole Auth backend, allowing you to specify an unique role-id, which will be associated with a secret-id upon creation.
+Unclear: How to send token accessor to Node to allow lease renewal once secret-id expires?
+
+1. Create AppRole by specifying URI and associating policy
+
+    ```
+    ./vault write auth/approle/role/production secret_id_ttl=5m token_ttl=5m token_max_ttl=5m secret_id_num_uses=2 policies=production
+    ```
+2. Do a read on this AppRole, passing Cubbyhole wrapper option -wrap-ttl
+    ```
+    ./vault read -wrap-ttl=20m auth/approle/role/production/role-id
+    ```
+3. This returns a cubbyhole token with time to live
+4. Send token to app
+5. Use ./vault unwrap [token] to get value of RoleId to use
+6. ./vault auth [token]
+6. Auth has ttl. When login, given a token, use vault token-renew <token> to renew auth lease
 
 ## FAQ
 1. How to associate a policy with a user?
@@ -116,3 +179,13 @@ For example, once policy "production" has been created, this command will genera
 4. How to initialize secrets on Vault, how to add new secret?
 
 5. How do you manage the secrets? Shouldn't there be a list of the available secrets, not necessarily the sensitive information, but at least the keys they are associated with.
+
+## Troubleshooting
+Error:
+_Error initializing Vault: Put https://127.0.0.1:8200/v1/sys/init: http: server gave HTTP response to HTTPS client_
+
+Solution:
+
+```
+export VAULT_ADDR=http://127.0.0.1:8200
+```

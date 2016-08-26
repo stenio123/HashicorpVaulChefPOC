@@ -28,4 +28,4 @@ opscode-push-jobs-server-ctl reconfigure
 # opscode-reporting-ctl reconfigure --accept-license
 
 # sets ssh keys to allow node communication
-cat /home/vagrant/.ssh/id_rsa.pub | cat >>  ~/.ssh/authorized_keys
+cat /home/vagrant/sync/ssh/id_rsa.pub | cat >>  ~/.ssh/authorized_keys
